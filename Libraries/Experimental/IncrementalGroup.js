@@ -10,17 +10,17 @@
 
 'use strict';
 
-const Incremental = require('Incremental');
-const React = require('React');
+const Incremental = require('./Incremental');
+const React = require('react');
 
 const PropTypes = require('prop-types');
 
-const infoLog = require('infoLog');
+const infoLog = require('../Utilities/infoLog');
 
 let _groupCounter = -1;
 const DEBUG = false;
 
-import type {Props, Context} from 'Incremental';
+import type {Props, Context} from './Incremental';
 
 /**
  * WARNING: EXPERIMENTAL. Breaking changes will probably happen a lot and will
@@ -33,7 +33,9 @@ import type {Props, Context} from 'Incremental';
  *
  * See Incremental.js for more info.
  */
-class IncrementalGroup extends React.Component<Props & {disabled?: boolean}> {
+class IncrementalGroup extends React.Component<
+  Props & {disabled?: boolean, ...},
+> {
   context: Context;
   _groupInc: string;
   UNSAFE_componentWillMount() {

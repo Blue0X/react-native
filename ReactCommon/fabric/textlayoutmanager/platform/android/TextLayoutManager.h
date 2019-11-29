@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -12,7 +12,8 @@
 #include <react/attributedstring/AttributedString.h>
 #include <react/attributedstring/ParagraphAttributes.h>
 #include <react/core/LayoutConstraints.h>
-#include <react/uimanager/ContextContainer.h>
+#include <react/utils/ContextContainer.h>
+#include <react/utils/SimpleThreadSafeCache.h>
 
 namespace facebook {
 namespace react {
@@ -26,7 +27,7 @@ using SharedTextLayoutManager = std::shared_ptr<const TextLayoutManager>;
  */
 class TextLayoutManager {
  public:
-  TextLayoutManager(const SharedContextContainer &contextContainer)
+  TextLayoutManager(const ContextContainer::Shared &contextContainer)
       : contextContainer_(contextContainer){};
   ~TextLayoutManager();
 
@@ -45,9 +46,18 @@ class TextLayoutManager {
   void *getNativeTextLayoutManager() const;
 
  private:
-  void *self_;
+  Size doMeasure(
+      AttributedString attributedString,
+      ParagraphAttributes paragraphAttributes,
+      LayoutConstraints layoutConstraints) const;
 
-  SharedContextContainer contextContainer_;
+  using MeasureCacheKey =
+      std::tuple<AttributedString, ParagraphAttributes, LayoutConstraints>;
+  using MeasureCache = SimpleThreadSafeCache<MeasureCacheKey, Size, 256>;
+
+  void *self_;
+  ContextContainer::Shared contextContainer_;
+  MeasureCache measureCache_{};
 };
 
 } // namespace react

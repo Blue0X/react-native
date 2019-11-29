@@ -11,14 +11,14 @@
 
 'use strict';
 
-const Keyboard = require('Keyboard');
-const dismissKeyboard = require('dismissKeyboard');
-const LayoutAnimation = require('LayoutAnimation');
+const Keyboard = require('../Keyboard');
+const dismissKeyboard = require('../../../Utilities/dismissKeyboard');
+const LayoutAnimation = require('../../../LayoutAnimation/LayoutAnimation');
 
-const NativeEventEmitter = require('NativeEventEmitter');
-const NativeModules = require('NativeModules');
+const NativeEventEmitter = require('../../../EventEmitter/NativeEventEmitter');
+const NativeModules = require('../../../BatchedBridge/NativeModules');
 
-jest.mock('LayoutAnimation');
+jest.mock('../../../LayoutAnimation/LayoutAnimation');
 
 describe('Keyboard', () => {
   beforeEach(() => {
@@ -31,6 +31,7 @@ describe('Keyboard', () => {
 
     // $FlowFixMe
     expect(Keyboard._subscriber).toBe(KeyboardEventEmitter._subscriber);
+    // $FlowFixMe Cannot access private property
     expect(Keyboard._nativeModule).toBe(KeyboardEventEmitter._nativeModule);
   });
 

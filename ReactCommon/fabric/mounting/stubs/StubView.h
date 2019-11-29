@@ -1,7 +1,9 @@
-// Copyright (c) Facebook, Inc. and its affiliates.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 #pragma once
 
@@ -36,6 +38,18 @@ class StubView final {
 
 bool operator==(StubView const &lhs, StubView const &rhs);
 bool operator!=(StubView const &lhs, StubView const &rhs);
+
+#if RN_DEBUG_STRING_CONVERTIBLE
+
+std::string getDebugName(StubView const &stubView);
+std::vector<DebugStringConvertibleObject> getDebugProps(
+    StubView const &stubView,
+    DebugStringConvertibleOptions options = {});
+std::vector<StubView> getDebugChildren(
+    StubView const &stubView,
+    DebugStringConvertibleOptions options = {});
+
+#endif
 
 } // namespace react
 } // namespace facebook

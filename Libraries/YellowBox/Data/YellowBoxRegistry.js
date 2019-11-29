@@ -10,9 +10,9 @@
 
 'use strict';
 
-const YellowBoxWarning = require('YellowBoxWarning');
+const YellowBoxWarning = require('./YellowBoxWarning');
 
-import type {Category} from 'YellowBoxCategory';
+import type {Category} from './YellowBoxCategory';
 
 export type Registry = Map<Category, $ReadOnlyArray<YellowBoxWarning>>;
 
@@ -24,7 +24,7 @@ export type Subscription = $ReadOnly<{|
   unsubscribe: () => void,
 |}>;
 
-const observers: Set<{observer: Observer}> = new Set();
+const observers: Set<{observer: Observer, ...}> = new Set();
 const ignorePatterns: Set<IgnorePattern> = new Set();
 const registry: Registry = new Map();
 
@@ -69,17 +69,14 @@ function handleUpdate(): void {
 const YellowBoxRegistry = {
   add({
     args,
-    framesToPop,
   }: $ReadOnly<{|
     args: $ReadOnlyArray<mixed>,
-    framesToPop: number,
   |}>): void {
     if (typeof args[0] === 'string' && args[0].startsWith('(ADVICE)')) {
       return;
     }
     const {category, message, stack} = YellowBoxWarning.parse({
       args,
-      framesToPop: framesToPop + 1,
     });
 
     let warnings = registry.get(category);

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -16,14 +16,10 @@ namespace facebook {
 namespace react {
 
 AccessibilityProps::AccessibilityProps(
-    const AccessibilityProps &sourceProps,
-    const RawProps &rawProps)
+    AccessibilityProps const &sourceProps,
+    RawProps const &rawProps)
     : accessible(
           convertRawProp(rawProps, "accessible", sourceProps.accessible)),
-      accessibilityTraits(convertRawProp(
-          rawProps,
-          "accessibilityTraits",
-          sourceProps.accessibilityTraits)),
       accessibilityLabel(convertRawProp(
           rawProps,
           "accessibilityLabel",
@@ -48,13 +44,29 @@ AccessibilityProps::AccessibilityProps(
           rawProps,
           "accessibilityIgnoresInvertColors",
           sourceProps.accessibilityIgnoresInvertColors)),
+      onAccessibilityTap(convertRawProp(
+          rawProps,
+          "onAccessibilityTap",
+          sourceProps.onAccessibilityTap)),
+      onAccessibilityMagicTap(convertRawProp(
+          rawProps,
+          "onAccessibilityMagicTap",
+          sourceProps.onAccessibilityMagicTap)),
+      onAccessibilityEscape(convertRawProp(
+          rawProps,
+          "onAccessibilityEscape",
+          sourceProps.onAccessibilityEscape)),
+      onAccessibilityAction(convertRawProp(
+          rawProps,
+          "onAccessibilityAction",
+          sourceProps.onAccessibilityAction)),
       testId(convertRawProp(rawProps, "testId", sourceProps.testId)) {}
 
 #pragma mark - DebugStringConvertible
 
 #if RN_DEBUG_STRING_CONVERTIBLE
 SharedDebugStringConvertibleList AccessibilityProps::getDebugProps() const {
-  const auto &defaultProps = AccessibilityProps();
+  auto const &defaultProps = AccessibilityProps();
   return SharedDebugStringConvertibleList{
       debugStringConvertibleItem("testId", testId, defaultProps.testId),
   };

@@ -1,7 +1,9 @@
-// Copyright (c) Facebook, Inc. and its affiliates.
-
-// This source code is licensed under the MIT license found in the
-// LICENSE file in the root directory of this source tree.
+/*
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
 #pragma once
 
@@ -12,16 +14,14 @@
 #include <react/config/ReactNativeConfig.h>
 #include <react/core/ComponentDescriptor.h>
 #include <react/core/LayoutConstraints.h>
-#include <react/mounting/ShadowTree.h>
-#include <react/mounting/ShadowTreeDelegate.h>
-#include <react/mounting/ShadowTreeRegistry.h>
 #include <react/uimanager/ComponentDescriptorFactory.h>
 #include <react/uimanager/ComponentDescriptorRegistry.h>
-#include <react/uimanager/ContextContainer.h>
 #include <react/uimanager/SchedulerDelegate.h>
+#include <react/uimanager/SchedulerToolbox.h>
 #include <react/uimanager/UIManagerBinding.h>
 #include <react/uimanager/UIManagerDelegate.h>
-#include <react/uimanager/primitives.h>
+#include <react/utils/ContextContainer.h>
+#include <react/utils/RuntimeExecutor.h>
 
 namespace facebook {
 namespace react {
@@ -29,11 +29,9 @@ namespace react {
 /*
  * Scheduler coordinates Shadow Tree updates and event flows.
  */
-class Scheduler final : public UIManagerDelegate, public ShadowTreeDelegate {
+class Scheduler final : public UIManagerDelegate {
  public:
-  Scheduler(
-      const SharedContextContainer &contextContainer,
-      ComponentRegistryFactory buildRegistryFunction);
+  Scheduler(SchedulerToolbox schedulerToolbox, SchedulerDelegate *delegate);
   ~Scheduler();
 
 #pragma mark - Surface Management
@@ -83,28 +81,27 @@ class Scheduler final : public UIManagerDelegate, public ShadowTreeDelegate {
 #pragma mark - UIManagerDelegate
 
   void uiManagerDidFinishTransaction(
-      SurfaceId surfaceId,
-      const SharedShadowNodeUnsharedList &rootChildNodes,
-      long startCommitTime) override;
+      MountingCoordinator::Shared const &mountingCoordinator) override;
   void uiManagerDidCreateShadowNode(
       const SharedShadowNode &shadowNode) override;
-
-#pragma mark - ShadowTreeDelegate
-
-  void shadowTreeDidCommit(
-      const ShadowTree &shadowTree,
-      const ShadowViewMutationList &mutations,
-      long commitStartTime,
-      long layoutTime) const override;
+  void uiManagerDidDispatchCommand(
+      const SharedShadowNode &shadowNode,
+      std::string const &commandName,
+      folly::dynamic const args) override;
+  void uiManagerDidSetJSResponder(
+      SurfaceId surfaceId,
+      const SharedShadowNode &shadowView,
+      bool blockNativeResponder) override;
+  void uiManagerDidClearJSResponder() override;
 
  private:
   SchedulerDelegate *delegate_;
   SharedComponentDescriptorRegistry componentDescriptorRegistry_;
   std::unique_ptr<const RootComponentDescriptor> rootComponentDescriptor_;
-  ShadowTreeRegistry shadowTreeRegistry_;
   RuntimeExecutor runtimeExecutor_;
-  std::shared_ptr<UIManagerBinding> uiManagerBinding_;
+  std::shared_ptr<UIManager> uiManager_;
   std::shared_ptr<const ReactNativeConfig> reactNativeConfig_;
+  EventDispatcher::Shared eventDispatcher_;
 };
 
 } // namespace react

@@ -1,25 +1,27 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
- * <p>This source code is licensed under the MIT license found in the LICENSE file in the root
- * directory of this source tree.
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
  */
+
 package com.facebook.react.views.text;
 
+import android.content.Context;
 import android.text.Layout;
 import android.text.Spannable;
-import com.facebook.react.bridge.ReactContext;
+import androidx.annotation.Nullable;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableNativeMap;
 import com.facebook.react.common.MapBuilder;
 import com.facebook.react.common.annotations.VisibleForTesting;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.uimanager.IViewManagerWithChildren;
 import com.facebook.react.uimanager.ReactStylesDiffMap;
+import com.facebook.react.uimanager.StateWrapper;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.yoga.YogaMeasureMode;
 import java.util.Map;
-
-import javax.annotation.Nullable;
 
 /**
  * Concrete class for {@link ReactTextAnchorViewManager} which represents view managers of anchor
@@ -73,9 +75,12 @@ public class ReactTextViewManager
   }
 
   @Override
-  public Object updateLocalData(
-      ReactTextView view, ReactStylesDiffMap props, ReactStylesDiffMap localData) {
-    ReadableMap attributedString = localData.getMap("attributedString");
+  public Object updateState(
+      ReactTextView view, ReactStylesDiffMap props, @Nullable StateWrapper stateWrapper) {
+    // TODO T55794595: Add support for updating state with null stateWrapper
+    ReadableNativeMap state = stateWrapper.getState();
+    ReadableMap attributedString = state.getMap("attributedString");
+    ReadableMap paragraphAttributes = state.getMap("paragraphAttributes");
 
     Spannable spanned =
         TextLayoutManager.getOrCreateSpannableForText(view.getContext(), attributedString);
@@ -83,24 +88,37 @@ public class ReactTextViewManager
 
     TextAttributeProps textViewProps = new TextAttributeProps(props);
 
-    // TODO add textBreakStrategy prop into local Data
-    int textBreakStrategy = Layout.BREAK_STRATEGY_HIGH_QUALITY;
+    int textBreakStrategy =
+        getTextBreakStrategy(paragraphAttributes.getString("textBreakStrategy"));
 
     // TODO add justificationMode prop into local Data
     int justificationMode = Layout.JUSTIFICATION_MODE_NONE;
 
     return new ReactTextUpdate(
         spanned,
-        -1, // TODO add this into local Data?
+        state.hasKey("mostRecentEventCount") ? state.getInt("mostRecentEventCount") : -1,
         false, // TODO add this into local Data
-        textViewProps.getStartPadding(),
-        textViewProps.getTopPadding(),
-        textViewProps.getEndPadding(),
-        textViewProps.getBottomPadding(),
         textViewProps.getTextAlign(),
         textBreakStrategy,
-        justificationMode
-      );
+        justificationMode);
+  }
+
+  private int getTextBreakStrategy(@Nullable String textBreakStrategy) {
+    int androidTextBreakStrategy = Layout.BREAK_STRATEGY_HIGH_QUALITY;
+    if (textBreakStrategy != null) {
+      switch (textBreakStrategy) {
+        case "simple":
+          androidTextBreakStrategy = Layout.BREAK_STRATEGY_SIMPLE;
+          break;
+        case "balanced":
+          androidTextBreakStrategy = Layout.BREAK_STRATEGY_BALANCED;
+          break;
+        default:
+          androidTextBreakStrategy = Layout.BREAK_STRATEGY_HIGH_QUALITY;
+          break;
+      }
+    }
+    return androidTextBreakStrategy;
   }
 
   @Override
@@ -112,9 +130,10 @@ public class ReactTextViewManager
 
   @Override
   public long measure(
-      ReactContext context,
+      Context context,
       ReadableMap localData,
       ReadableMap props,
+      ReadableMap state,
       float width,
       YogaMeasureMode widthMode,
       float height,
@@ -122,5 +141,10 @@ public class ReactTextViewManager
 
     return TextLayoutManager.measureText(
         context, localData, props, width, widthMode, height, heightMode);
+  }
+
+  @Override
+  public void setPadding(ReactTextView view, int left, int top, int right, int bottom) {
+    view.setPadding(left, top, right, bottom);
   }
 }

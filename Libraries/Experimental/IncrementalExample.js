@@ -21,11 +21,11 @@ const {
   View,
 } = ReactNative;
 
-const Incremental = require('Incremental');
-const IncrementalGroup = require('IncrementalGroup');
-const IncrementalPresenter = require('IncrementalPresenter');
+const Incremental = require('./Incremental');
+const IncrementalGroup = require('./IncrementalGroup');
+const IncrementalPresenter = require('./IncrementalPresenter');
 
-const JSEventLoopWatchdog = require('JSEventLoopWatchdog');
+const JSEventLoopWatchdog = require('../Interaction/JSEventLoopWatchdog');
 
 const performanceNow = require('fbjs/lib/performanceNow');
 
@@ -36,7 +36,11 @@ let totalWidgets = 0;
 
 class SlowWidget extends React.Component<
   $FlowFixMeProps,
-  {ctorTimestamp: number, timeToMount: number},
+  {
+    ctorTimestamp: number,
+    timeToMount: number,
+    ...
+  },
 > {
   constructor(props, context) {
     super(props, context);
@@ -92,9 +96,10 @@ function Block(props: Object) {
 
 const Row = (props: Object) => <View style={styles.row} {...props} />;
 
-class IncrementalExample extends React.Component<mixed, {stats: ?Object}> {
-  static title = '<Incremental*>';
-  static description = 'Enables incremental rendering of complex components.';
+class IncrementalExample extends React.Component<mixed, {stats: ?Object, ...}> {
+  static title: string = '<Incremental*>';
+  static description: string =
+    'Enables incremental rendering of complex components.';
   start: number;
   constructor(props: mixed, context: mixed) {
     super(props, context);

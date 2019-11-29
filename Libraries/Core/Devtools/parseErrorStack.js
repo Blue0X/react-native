@@ -10,16 +10,15 @@
 
 'use strict';
 
-export type StackFrame = {
-  column: ?number,
-  file: string,
-  lineNumber: number,
-  methodName: string,
-};
+import type {StackFrame} from '../NativeExceptionsManager';
 
 export type ExtendedError = Error & {
-  framesToPop?: number,
   jsEngine?: string,
+  preventSymbolication?: boolean,
+  componentStack?: string,
+  forceRedbox?: boolean,
+  isComponentError?: boolean,
+  ...
 };
 
 function parseErrorStack(e: ExtendedError): Array<StackFrame> {
@@ -32,10 +31,6 @@ function parseErrorStack(e: ExtendedError): Array<StackFrame> {
     ? e.stack
     : stacktraceParser.parse(e.stack);
 
-  let framesToPop = typeof e.framesToPop === 'number' ? e.framesToPop : 0;
-  while (framesToPop--) {
-    stack.shift();
-  }
   return stack;
 }
 

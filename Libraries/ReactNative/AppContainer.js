@@ -10,38 +10,46 @@
 
 'use strict';
 
-const EmitterSubscription = require('EmitterSubscription');
+const EmitterSubscription = require('../vendor/emitter/EmitterSubscription');
 const PropTypes = require('prop-types');
-const RCTDeviceEventEmitter = require('RCTDeviceEventEmitter');
-const React = require('React');
-const ReactNative = require('ReactNative');
-const StyleSheet = require('StyleSheet');
-const View = require('View');
+const RCTDeviceEventEmitter = require('../EventEmitter/RCTDeviceEventEmitter');
+const React = require('react');
+const ReactNative = require('../Renderer/shims/ReactNative');
+const RootTagContext = require('./RootTagContext');
+const StyleSheet = require('../StyleSheet/StyleSheet');
+const View = require('../Components/View/View');
 
-type Context = {
-  rootTag: number,
-};
+type Context = {rootTag: number, ...};
 
 type Props = $ReadOnly<{|
   children?: React.Node,
+  fabric?: boolean,
   rootTag: number,
+  showArchitectureIndicator?: boolean,
   WrapperComponent?: ?React.ComponentType<any>,
+  internal_excludeLogBox?: ?boolean,
 |}>;
 
 type State = {|
   inspector: ?React.Node,
   mainKey: number,
+  hasError: boolean,
 |};
 
 class AppContainer extends React.Component<Props, State> {
   state: State = {
     inspector: null,
     mainKey: 1,
+    hasError: false,
   };
   _mainRef: ?React.ElementRef<typeof View>;
   _subscription: ?EmitterSubscription = null;
 
-  static childContextTypes = {
+  static getDerivedStateFromError: any = undefined;
+
+  static childContextTypes:
+    | any
+    | {|rootTag: React$PropType$Primitive<number>|} = {
     rootTag: PropTypes.number,
   };
 
@@ -57,7 +65,7 @@ class AppContainer extends React.Component<Props, State> {
         this._subscription = RCTDeviceEventEmitter.addListener(
           'toggleElementInspector',
           () => {
-            const Inspector = require('Inspector');
+            const Inspector = require('../Inspector/Inspector');
             const inspector = this.state.inspector ? null : (
               <Inspector
                 inspectedViewTag={ReactNative.findNodeHandle(this._mainRef)}
@@ -86,11 +94,16 @@ class AppContainer extends React.Component<Props, State> {
   }
 
   render(): React.Node {
-    let yellowBox = null;
-    if (__DEV__) {
+    let logBox = null;
+    if (__DEV__ && !this.props.internal_excludeLogBox) {
       if (!global.__RCTProfileIsProfiling) {
-        const YellowBox = require('YellowBox');
-        yellowBox = <YellowBox />;
+        if (global.__reactExperimentalLogBox) {
+          const LogBox = require('../LogBox/LogBox');
+          logBox = <LogBox />;
+        } else {
+          const YellowBox = require('../YellowBox/YellowBox');
+          logBox = <YellowBox />;
+        }
       }
     }
 
@@ -109,14 +122,24 @@ class AppContainer extends React.Component<Props, State> {
 
     const Wrapper = this.props.WrapperComponent;
     if (Wrapper != null) {
-      innerView = <Wrapper>{innerView}</Wrapper>;
+      innerView = (
+        <Wrapper
+          fabric={this.props.fabric === true}
+          showArchitectureIndicator={
+            this.props.showArchitectureIndicator === true
+          }>
+          {innerView}
+        </Wrapper>
+      );
     }
     return (
-      <View style={styles.appContainer} pointerEvents="box-none">
-        {innerView}
-        {yellowBox}
-        {this.state.inspector}
-      </View>
+      <RootTagContext.Provider value={this.props.rootTag}>
+        <View style={styles.appContainer} pointerEvents="box-none">
+          {!this.state.hasError && innerView}
+          {this.state.inspector}
+          {logBox}
+        </View>
+      </RootTagContext.Provider>
     );
   }
 }
@@ -129,8 +152,22 @@ const styles = StyleSheet.create({
 
 if (__DEV__) {
   if (!global.__RCTProfileIsProfiling) {
-    const YellowBox = require('YellowBox');
-    YellowBox.install();
+    if (global.__reactExperimentalLogBox) {
+      const LogBox = require('../LogBox/LogBox');
+      LogBox.install();
+
+      // TODO: (rickhanlonii) T57484314 Temporary hack to fix LogBox experiment but we need to
+      // either decide to provide an error boundary by default or move this to a separate root.
+      AppContainer.getDerivedStateFromError = function getDerivedStateFromError(
+        error,
+        state,
+      ) {
+        return {...state, hasError: true};
+      };
+    } else {
+      const YellowBox = require('../YellowBox/YellowBox');
+      YellowBox.install();
+    }
   }
 }
 
